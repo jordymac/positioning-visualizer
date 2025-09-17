@@ -16,9 +16,10 @@ import { Plus, Trash2 } from 'lucide-react';
 interface SimpleCoreMessagingFormProps {
   onSubmit: (data: CoreMessaging) => void;
   defaultValues?: Partial<CoreMessaging>;
+  isGenerating?: boolean;
 }
 
-export function SimpleCoreMessagingForm({ onSubmit, defaultValues }: SimpleCoreMessagingFormProps) {
+export function SimpleCoreMessagingForm({ onSubmit, defaultValues, isGenerating = false }: SimpleCoreMessagingFormProps) {
   const [formData, setFormData] = useState<CoreMessaging>({
     primaryAnchor: {
       type: defaultValues?.primaryAnchor?.type || '',
@@ -276,8 +277,15 @@ export function SimpleCoreMessagingForm({ onSubmit, defaultValues }: SimpleCoreM
 
         {/* Submit Buttons */}
         <div className="flex gap-4 pt-8 border-t border-gray-200 mt-8">
-          <Button type="submit" className="flex-1 h-12 text-lg">
-            Generate Positioning Strategy
+          <Button type="submit" className="flex-1 h-12 text-lg" disabled={isGenerating}>
+            {isGenerating ? (
+              <span className="flex items-center">
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                Generating with AI...
+              </span>
+            ) : (
+              'Generate Positioning Strategy'
+            )}
           </Button>
           <Button 
             type="button" 
