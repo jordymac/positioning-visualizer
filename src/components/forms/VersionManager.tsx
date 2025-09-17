@@ -17,6 +17,7 @@ interface VersionManagerProps {
   onVersionSelect: (versionId: string) => void;
   onVersionCreate: (name: string) => void;
   onVersionDelete: (versionId: string) => void;
+  onClearAllData?: () => void;
 }
 
 export function VersionManager({
@@ -25,6 +26,7 @@ export function VersionManager({
   onVersionSelect,
   onVersionCreate,
   onVersionDelete,
+  onClearAllData,
 }: VersionManagerProps) {
   const [newVersionName, setNewVersionName] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -99,6 +101,17 @@ export function VersionManager({
             onClick={() => handleDelete(currentVersionId)}
           >
             <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+        
+        {onClearAllData && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearAllData}
+            className="ml-auto text-red-600 hover:text-red-700"
+          >
+            Clear All Data
           </Button>
         )}
       </div>
