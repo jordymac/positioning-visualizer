@@ -1,190 +1,166 @@
 export interface PositioningExample {
   id: string;
   company: string;
-  industry: string;
-  primaryAnchor: {
-    type: 'Product Category' | 'Use Case' | 'Competitive Alternative';
-    content: string;
-  };
-  secondaryAnchor: {
-    type: 'Company Type' | 'Department' | 'Desired Outcome';
-    content: string;
-  };
+  anchorType: 'Product Category' | 'Use Case' | 'Competitive Alternative';
+  primaryAnchor: string;
+  tagline: string;
+  description: string;
   problem: string;
   differentiator: string;
-  thesis: string[];
-  risks: string[];
-  generatedContent: {
-    headline: string;
-    subheadline: string;
-    opportunity: string;
+  secondaryAnchors: {
+    audience?: string;
+    speed?: string;
+    proof?: string;
+    outcome?: string;
+    features?: string;
+    focus?: string;
   };
   tags: string[];
+  tone: string;
+  industry: string;
   effectiveness: 'high' | 'medium' | 'low';
+  structure: string;
 }
 
 export const positioningExamples: PositioningExample[] = [
   {
-    id: '1',
-    company: 'Slack',
-    industry: 'Technology',
-    primaryAnchor: {
-      type: 'Product Category',
-      content: 'Team Communication Platform'
+    id: "wynter-001",
+    company: "Wynter",
+    anchorType: "Product Category",
+    primaryAnchor: "market research platform",
+    tagline: "On-demand market research platform for B2B",
+    description: "Wynter tells you what your target market wants. We help leaders answer \"what are their pain points?\" and \"what would make them buy from us?\". In under 48 hours.",
+    problem: "B2B leaders don't know what their target market wants or what would make them buy",
+    differentiator: "Get market insights in under 48 hours vs traditional research that takes weeks",
+    secondaryAnchors: {
+      audience: "B2B leaders",
+      speed: "48 hours"
     },
-    secondaryAnchor: {
-      type: 'Company Type',
-      content: 'Knowledge Workers'
-    },
-    problem: 'Email chains and scattered conversations make team collaboration inefficient and information hard to find',
-    differentiator: 'Organized channels, searchable history, and integrated workflows that replace email for internal communication',
-    thesis: [
-      'Teams using email for internal communication lose productivity to inbox clutter',
-      'Searchable conversation history prevents repeated questions and lost knowledge',
-      'Channel-based organization makes project communication transparent and accessible'
-    ],
-    risks: [
-      'Notification overload can create new distraction problems',
-      'Channel proliferation can fragment communication instead of centralizing it'
-    ],
-    generatedContent: {
-      headline: 'Team Communication Platform for Knowledge Workers',
-      subheadline: 'Replace email chaos with organized, searchable team conversations',
-      opportunity: 'Transform scattered email threads into organized, searchable team communication'
-    },
-    tags: ['B2B', 'SaaS', 'Communication', 'Productivity'],
-    effectiveness: 'high'
+    tags: ["speed-focused", "b2b-saas", "research", "time-sensitive"],
+    tone: "professional",
+    industry: "market research",
+    effectiveness: "high",
+    structure: "problem-solution"
   },
   {
-    id: '2',
-    company: 'Zoom',
-    industry: 'Technology',
-    primaryAnchor: {
-      type: 'Use Case',
-      content: 'Remote Video Meetings'
+    id: "fletch-001", 
+    company: "Fletch",
+    anchorType: "Use Case",
+    primaryAnchor: "fix your confusing positioning",
+    tagline: "Let's fix your confusing positioning",
+    description: "Fletch has helped over 300 startups discover their ideal product positioning and bring it to life on a newly crafted homepage.",
+    problem: "Startups have confusing positioning",
+    differentiator: "Complete positioning discovery + homepage execution in one service",
+    secondaryAnchors: {
+      audience: "startups",
+      proof: "300+ companies helped"
     },
-    secondaryAnchor: {
-      type: 'Company Type',
-      content: 'Distributed Teams'
-    },
-    problem: 'Traditional conference calling creates barriers to natural communication and collaboration for remote teams',
-    differentiator: 'HD video quality, screen sharing, and reliable connection that makes remote meetings feel as natural as in-person',
-    thesis: [
-      'Video communication builds stronger relationships than audio-only calls',
-      'Screen sharing enables real-time collaboration regardless of location',
-      'Reliable technology reduces meeting friction and technical frustrations'
-    ],
-    risks: [
-      'Video fatigue from constant face-to-face digital interaction',
-      'Bandwidth requirements may exclude some users or regions'
-    ],
-    generatedContent: {
-      headline: 'Remote Video Meetings for Distributed Teams',
-      subheadline: 'Make remote collaboration as natural as being in the same room',
-      opportunity: 'Enable distributed teams to collaborate effectively through high-quality video meetings'
-    },
-    tags: ['B2B', 'Remote Work', 'Communication', 'Collaboration'],
-    effectiveness: 'high'
+    tags: ["positioning", "startups", "homepage", "service-based"],
+    tone: "casual",
+    industry: "product marketing",
+    effectiveness: "high",
+    structure: "direct-promise"
   },
   {
-    id: '3',
-    company: 'Stripe',
-    industry: 'FinTech',
-    primaryAnchor: {
-      type: 'Product Category',
-      content: 'Payment Processing API'
+    id: "lemlist-001",
+    company: "LemList", 
+    anchorType: "Competitive Alternative",
+    primaryAnchor: "the only cold outreach tool that helps you reach inboxes and get replies",
+    tagline: "The only cold outreach tool that helps you reach inboxes and get replies",
+    description: "Build your lead list with verified emails, write and personalize at scale, and send cold emails that actually get customers.",
+    problem: "Most cold outreach tools don't actually get replies or reach inboxes",
+    differentiator: "Actually reaches inboxes and gets replies (vs tools that just send emails)",
+    secondaryAnchors: {
+      outcome: "get customers",
+      features: "verified emails, personalization at scale"
     },
-    secondaryAnchor: {
-      type: 'Company Type',
-      content: 'Online Businesses'
-    },
-    problem: 'Setting up online payments requires complex integrations, lengthy approval processes, and navigating financial regulations',
-    differentiator: 'Developer-friendly APIs, instant activation, and handling compliance automatically so businesses can start accepting payments in minutes',
-    thesis: [
-      'Developers prefer clean, well-documented APIs over complex payment interfaces',
-      'Fast time-to-market is crucial for online business validation and growth',
-      'Automatic compliance handling reduces legal and operational overhead'
-    ],
-    risks: [
-      'Dependence on a single payment provider creates business risk',
-      'Developer-focused positioning may alienate non-technical decision makers'
-    ],
-    generatedContent: {
-      headline: 'Payment Processing API for Online Businesses',
-      subheadline: 'Accept payments in minutes with developer-friendly APIs',
-      opportunity: 'Simplify online payment setup for businesses through developer-focused APIs'
-    },
-    tags: ['B2B', 'FinTech', 'API', 'E-commerce'],
-    effectiveness: 'high'
+    tags: ["differentiation-focused", "sales", "email-marketing", "results-oriented"],
+    tone: "confident",
+    industry: "sales tech",
+    effectiveness: "high", 
+    structure: "superiority-claim"
   },
   {
-    id: '4',
-    company: 'Notion',
-    industry: 'Productivity',
-    primaryAnchor: {
-      type: 'Competitive Alternative',
-      content: 'All-in-one workspace replacing multiple tools'
+    id: "voltaiq-001",
+    company: "Voltaiq",
+    anchorType: "Use Case",
+    primaryAnchor: "catch battery defects in hours - not weeks", 
+    tagline: "Catch battery defects in hours - not weeks",
+    description: "Catch quality issues faster with data you already collect. Designed for battery production lines and test labs, used by leading global companies to scale fast and ensure reliability.",
+    problem: "Battery defect detection takes weeks, slowing production and risking quality",
+    differentiator: "Uses existing data to detect defects in hours instead of weeks",
+    secondaryAnchors: {
+      audience: "battery manufacturers", 
+      proof: "leading global companies"
     },
-    secondaryAnchor: {
-      type: 'Company Type',
-      content: 'Small to medium teams'
-    },
-    problem: 'Teams juggle multiple tools for notes, docs, tasks, and databases, creating information silos and context switching overhead',
-    differentiator: 'Flexible blocks-based system that combines notes, databases, and project management in one customizable workspace',
-    thesis: [
-      'Tool switching disrupts workflow and fragments information',
-      'Customizable workspaces adapt to team-specific processes better than rigid tools',
-      'Unified information architecture improves team knowledge sharing'
-    ],
-    risks: [
-      'All-in-one tools can become complex and overwhelming for simple use cases',
-      'Performance may suffer compared to specialized single-purpose tools'
-    ],
-    generatedContent: {
-      headline: 'All-in-one Workspace for Small to Medium Teams',
-      subheadline: 'Replace multiple tools with one flexible, customizable workspace',
-      opportunity: 'Eliminate tool switching overhead by consolidating team workflows in one platform'
-    },
-    tags: ['B2B', 'Productivity', 'Workspace', 'Collaboration'],
-    effectiveness: 'medium'
+    tags: ["speed-improvement", "manufacturing", "existing-data", "enterprise"],
+    tone: "technical",
+    industry: "manufacturing",
+    effectiveness: "high",
+    structure: "time-comparison"
   },
   {
-    id: '5',
-    company: 'Figma',
-    industry: 'Design Tools',
-    primaryAnchor: {
-      type: 'Use Case',
-      content: 'Collaborative Design'
+    id: "toro-001",
+    company: "ToroTMS",
+    anchorType: "Product Category", 
+    primaryAnchor: "TMS for bulk haulers",
+    tagline: "The TMS for bulk haulers",
+    description: "Unlike other TMS systems which create more work for your team, Toro is built specifically to tackle the unique dispatching and back office challenges of bulk hauling.",
+    problem: "Other TMS systems create more work and don't handle bulk hauling specifics",
+    differentiator: "Built specifically for bulk hauling challenges vs generic TMS systems",
+    secondaryAnchors: {
+      audience: "bulk haulers",
+      focus: "dispatching and back office"
     },
-    secondaryAnchor: {
-      type: 'Department',
-      content: 'Design Teams'
+    tags: ["niche-specific", "logistics", "industry-focused", "workflow-improvement"],
+    tone: "professional",
+    industry: "logistics",
+    effectiveness: "high",
+    structure: "niche-specialization"
+  },
+  {
+    id: "freckle-001",
+    company: "Freckle", 
+    anchorType: "Competitive Alternative",
+    primaryAnchor: "Clay alternative for non-technical users",
+    tagline: "It's like Clay... without the learning curve",
+    description: "Freckle is the Clay-alternative for non-technical users. Unlock your best outbound campaigns with easy enrichment research and clean up templates for your lead lists.",
+    problem: "Clay has a steep learning curve for non-technical users",
+    differentiator: "Same power as Clay but without the complexity - designed for non-technical users",
+    secondaryAnchors: {
+      audience: "non-technical users",
+      outcome: "better outbound campaigns"
     },
-    problem: 'Design tools force designers to work in isolation, creating version control issues and slowing feedback cycles',
-    differentiator: 'Browser-based collaborative design with real-time multiplayer editing and seamless stakeholder review',
-    thesis: [
-      'Real-time collaboration reduces design iteration cycles',
-      'Browser-based access removes software installation barriers for stakeholders',
-      'Version control issues disappear when everyone works on the same live file'
-    ],
-    risks: [
-      'Internet dependency makes the tool unusable offline',
-      'Browser performance may lag behind native desktop applications'
-    ],
-    generatedContent: {
-      headline: 'Collaborative Design for Design Teams',
-      subheadline: 'Design together in real-time, review seamlessly in the browser',
-      opportunity: 'Transform isolated design workflows into collaborative, feedback-rich processes'
+    tags: ["ease-of-use", "competitor-alternative", "accessibility", "sales-tools"],
+    tone: "approachable",
+    industry: "sales tech", 
+    effectiveness: "high",
+    structure: "competitor-comparison"
+  },
+  {
+    id: "podia-001",
+    company: "Podia",
+    anchorType: "Product Category",
+    primaryAnchor: "all-in-one for teams-of-one", 
+    tagline: "The all-in-one for teams-of-one",
+    description: "Join 150,000+ solo business owners who use Podia to run their website, online store, and email marketing",
+    problem: "Solo business owners need multiple tools for website, store, and email marketing",
+    differentiator: "Complete business toolkit designed specifically for solo entrepreneurs",
+    secondaryAnchors: {
+      audience: "solo business owners",
+      proof: "150,000+ users"
     },
-    tags: ['B2B', 'Design', 'Collaboration', 'Creative Tools'],
-    effectiveness: 'high'
+    tags: ["all-in-one", "solo-entrepreneurs", "simplification", "social-proof"],
+    tone: "encouraging",
+    industry: "creator economy",
+    effectiveness: "high",
+    structure: "community-focused"
   }
 ];
 
 export const getExamplesByAnchorType = (anchorType: string) => {
   return positioningExamples.filter(example => 
-    example.primaryAnchor.type === anchorType || 
-    example.secondaryAnchor.type === anchorType
+    example.anchorType === anchorType
   );
 };
 
@@ -192,6 +168,24 @@ export const getExamplesByIndustry = (industry: string) => {
   return positioningExamples.filter(example => 
     example.industry.toLowerCase().includes(industry.toLowerCase()) ||
     example.tags.some(tag => tag.toLowerCase().includes(industry.toLowerCase()))
+  );
+};
+
+export const getExamplesByTags = (tags: string[]) => {
+  return positioningExamples.filter(example =>
+    tags.some(tag => example.tags.includes(tag))
+  );
+};
+
+export const getExamplesByStructure = (structure: string) => {
+  return positioningExamples.filter(example => 
+    example.structure === structure
+  );
+};
+
+export const getExamplesByTone = (tone: string) => {
+  return positioningExamples.filter(example =>
+    example.tone === tone
   );
 };
 

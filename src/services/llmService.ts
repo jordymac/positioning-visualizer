@@ -45,39 +45,66 @@ class LLMService {
   }
 
   private findSimilarExamples(coreMessaging: CoreMessaging) {
-    return positioningExamples.filter(example => {
-      // Match by anchor types
-      const primaryMatch = example.primaryAnchor.type === coreMessaging.primaryAnchor.type;
-      const secondaryMatch = example.secondaryAnchor.type === coreMessaging.secondaryAnchor.type;
+    const examples = positioningExamples.filter(example => {
+      // Match by anchor type first
+      const anchorTypeMatch = example.anchorType === coreMessaging.primaryAnchor.type;
+      
+      // Look for keyword similarities in problem/differentiator
+      const problemKeywords = coreMessaging.problem.toLowerCase().split(' ');
+      const diffKeywords = coreMessaging.differentiator.toLowerCase().split(' ');
+      
+      const hasKeywordMatch = [...problemKeywords, ...diffKeywords].some(keyword => 
+        keyword.length > 3 && (
+          example.problem.toLowerCase().includes(keyword) ||
+          example.differentiator.toLowerCase().includes(keyword) ||
+          example.tags.some(tag => tag.toLowerCase().includes(keyword))
+        )
+      );
       
       // Prefer high effectiveness examples
       const isHighEffectiveness = example.effectiveness === 'high';
       
-      return (primaryMatch || secondaryMatch) && isHighEffectiveness;
-    }).slice(0, 2); // Limit to 2 examples for context
+      return (anchorTypeMatch || hasKeywordMatch) && isHighEffectiveness;
+    });
+
+    // Sort by relevance and take best matches
+    return examples.slice(0, 3);
   }
 
   private buildPrompt(coreMessaging: CoreMessaging): string {
     const examples = this.findSimilarExamples(coreMessaging);
     
-    let prompt = `Generate compelling positioning copy based on these inputs:
+    let prompt = `You are an expert positioning copywriter. Study these successful positioning examples and create similar compelling copy.
 
+SUCCESSFUL POSITIONING EXAMPLES:
+`;
+
+    examples.forEach((example, index) => {
+      prompt += `
+${index + 1}. ${example.company} (${example.anchorType})
+   Primary Anchor: "${example.primaryAnchor}"
+   Tagline: "${example.tagline}" 
+   Problem: ${example.problem}
+   Differentiator: ${example.differentiator}
+   Structure: ${example.structure}
+   Tone: ${example.tone}
+`;
+    });
+
+    prompt += `
+YOUR POSITIONING TASK:
 Primary Anchor: ${coreMessaging.primaryAnchor.content} (${coreMessaging.primaryAnchor.type})
 Secondary Anchor: ${coreMessaging.secondaryAnchor.content} (${coreMessaging.secondaryAnchor.type})
 Problem: ${coreMessaging.problem}
 Differentiator: ${coreMessaging.differentiator}
 
-`;
+Based on the successful examples above, create a compelling tagline that:
+- Uses the same proven patterns and structures
+- Addresses the specific problem and differentiator
+- Is clear, memorable, and action-oriented
+- Follows successful positioning formulas
 
-    if (examples.length > 0) {
-      prompt += `Reference examples:\n`;
-      examples.forEach((example, index) => {
-        prompt += `${index + 1}. ${example.generatedContent.headline}\n`;
-      });
-      prompt += '\n';
-    }
-
-    prompt += `Create a compelling headline that positions ${coreMessaging.primaryAnchor.content} for ${coreMessaging.secondaryAnchor.content}:`;
+Generate tagline:`;
     
     return prompt;
   }
@@ -141,6 +168,28 @@ Differentiator: ${coreMessaging.differentiator}
   }
 
   private createFallbackHeadline(coreMessaging: CoreMessaging): string {
+    // Use patterns from our training data
+    const examples = this.findSimilarExamples(coreMessaging);
+    
+    if (examples.length > 0) {
+      const similarExample = examples[0];
+      
+      // Apply similar structure patterns
+      if (similarExample.structure === 'time-comparison' && coreMessaging.differentiator.includes('faster')) {
+        return `${coreMessaging.primaryAnchor.content} - faster than traditional solutions`;
+      }
+      if (similarExample.structure === 'competitor-comparison') {
+        return `${coreMessaging.primaryAnchor.content} without the complexity`;
+      }
+      if (similarExample.structure === 'niche-specialization') {
+        return `The ${coreMessaging.primaryAnchor.content} for ${coreMessaging.secondaryAnchor.content}`;
+      }
+      if (similarExample.structure === 'problem-solution') {
+        return `${coreMessaging.primaryAnchor.content} that actually works`;
+      }
+    }
+    
+    // Fallback to basic format
     if (coreMessaging.secondaryAnchor.content) {
       return `${coreMessaging.primaryAnchor.content} for ${coreMessaging.secondaryAnchor.content}`;
     }
@@ -148,9 +197,16 @@ Differentiator: ${coreMessaging.differentiator}
   }
 
   private createSubheadline(coreMessaging: CoreMessaging): string {
-    const problem = coreMessaging.problem.substring(0, 80);
-    const differentiator = coreMessaging.differentiator.substring(0, 60);
-    return `Solving ${problem}... through ${differentiator}...`;
+    // Create benefit-focused subheadline
+    const problem = coreMessaging.problem.substring(0, 100);
+    const solution = coreMessaging.differentiator.substring(0, 100);
+    
+    // Pattern: "Stop [problem]. Start [solution]."
+    if (problem.length > 20 && solution.length > 20) {
+      return `Stop ${problem.toLowerCase()}. Start ${solution.toLowerCase()}.`;
+    }
+    
+    return `Transform ${coreMessaging.secondaryAnchor.content || 'your business'} with ${coreMessaging.primaryAnchor.content}`;
   }
 
   private enhanceThesis(thesis: string[]): string[] {
