@@ -13,7 +13,7 @@ function createHighlightedText(text: string, highlights: { text: string; color: 
   if (!text) return text;
   
   let result = text;
-  const elements: JSX.Element[] = [];
+  const elements: React.ReactNode[] = [];
   let lastIndex = 0;
   
   // Sort highlights by position in text to process in order
