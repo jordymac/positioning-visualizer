@@ -11,6 +11,7 @@ export const CoreMessagingSchema = z.object({
   }),
   problem: z.string(),
   differentiator: z.string(),
+  icp: z.array(z.string()).min(1, 'At least one ICP segment is required').max(5, 'Maximum 5 ICP segments recommended for focus'),
   thesis: z.array(z.string()),
   risks: z.array(z.string()),
 });

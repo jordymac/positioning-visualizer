@@ -9,6 +9,7 @@ export interface CoreMessaging {
   };
   problem: string;
   differentiator: string;
+  icp: string[]; // Ideal Customer Profile segments
   thesis: string[];
   risks: string[];
 }

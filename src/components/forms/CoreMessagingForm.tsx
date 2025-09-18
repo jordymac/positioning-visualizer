@@ -43,10 +43,20 @@ export function CoreMessagingForm({ onSubmit, defaultValues }: CoreMessagingForm
       },
       problem: '',
       differentiator: '',
+      icp: [''],
       thesis: [''],
       risks: [''],
       ...defaultValues,
     },
+  });
+
+  const {
+    fields: icpFields,
+    append: appendICP,
+    remove: removeICP,
+  } = useFieldArray({
+    control: form.control,
+    name: 'icp',
   });
 
   const {
@@ -230,6 +240,69 @@ export function CoreMessagingForm({ onSubmit, defaultValues }: CoreMessagingForm
               </FormItem>
             )}
           />
+
+          {/* ICP (Ideal Customer Profile) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel className="text-base flex items-center gap-2">
+                Ideal Customer Profile (ICP)
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </FormLabel>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendICP('')}
+                disabled={icpFields.length >= 5}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add ICP Segment
+              </Button>
+            </div>
+            <FormDescription className="text-sm">
+              Define your ideal customer segments. <strong>Keep it narrow</strong> - too many segments dilute your positioning.
+              {icpFields.length >= 3 && (
+                <span className="text-amber-600 block mt-1">
+                  ⚠️ Warning: {icpFields.length} segments may be too broad. Consider focusing on fewer, more specific segments.
+                </span>
+              )}
+              {icpFields.length >= 5 && (
+                <span className="text-red-600 block mt-1">
+                  ❌ Maximum reached: You've hit the 5 segment limit for effective positioning.
+                </span>
+              )}
+            </FormDescription>
+            {icpFields.map((field, index) => (
+              <FormField
+                key={field.id}
+                control={form.control}
+                name={`icp.${index}`}
+                render={({ field: inputField }) => (
+                  <FormItem>
+                    <div className="flex gap-2">
+                      <FormControl className="flex-1">
+                        <Input
+                          placeholder={`e.g., B2B SaaS founders, Marketing managers at 50-200 person companies...`}
+                          {...inputField}
+                        />
+                      </FormControl>
+                      {icpFields.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeICP(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Additional Elements Section */}

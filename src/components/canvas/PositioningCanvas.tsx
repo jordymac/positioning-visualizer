@@ -12,50 +12,79 @@ interface PositioningCanvasProps {
 function createHighlightedText(text: string, highlights: { text: string; color: string }[]) {
   if (!text) return text;
   
-  let result = text;
-  const elements: React.ReactNode[] = [];
-  let lastIndex = 0;
+  // Create a mapping of character positions to highlights
+  const highlightMap = new Map<number, { color: string; length: number }>();
   
-  // Sort highlights by position in text to process in order
-  const foundHighlights = highlights
-    .map(highlight => ({
-      ...highlight,
-      index: result.toLowerCase().indexOf(highlight.text.toLowerCase())
-    }))
-    .filter(h => h.index !== -1)
-    .sort((a, b) => a.index - b.index);
-  
-  foundHighlights.forEach((highlight, i) => {
-    // Add text before highlight
-    if (highlight.index > lastIndex) {
-      elements.push(
-        <span key={`text-${i}`} className="text-gray-800">
-          {result.substring(lastIndex, highlight.index)}
-        </span>
-      );
+  // Find all matches and map their positions
+  highlights.forEach(highlight => {
+    const searchText = highlight.text.toLowerCase();
+    const sourceText = text.toLowerCase();
+    let searchIndex = 0;
+    
+    while (searchIndex < sourceText.length) {
+      const foundIndex = sourceText.indexOf(searchText, searchIndex);
+      if (foundIndex === -1) break;
+      
+      // Only highlight if this position isn't already highlighted
+      let canHighlight = true;
+      for (let i = foundIndex; i < foundIndex + highlight.text.length; i++) {
+        if (highlightMap.has(i)) {
+          canHighlight = false;
+          break;
+        }
+      }
+      
+      if (canHighlight) {
+        highlightMap.set(foundIndex, {
+          color: highlight.color,
+          length: highlight.text.length
+        });
+        break; // Only highlight first occurrence of each phrase
+      }
+      
+      searchIndex = foundIndex + 1;
     }
-    
-    // Add highlighted text
-    elements.push(
-      <span 
-        key={`highlight-${i}`} 
-        className="px-1 rounded"
-        style={{ backgroundColor: highlight.color }}
-      >
-        {result.substring(highlight.index, highlight.index + highlight.text.length)}
-      </span>
-    );
-    
-    lastIndex = highlight.index + highlight.text.length;
   });
   
-  // Add remaining text
-  if (lastIndex < result.length) {
-    elements.push(
-      <span key="text-end" className="text-gray-800">
-        {result.substring(lastIndex)}
-      </span>
-    );
+  // Build the result by walking through the text
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+  
+  while (i < text.length) {
+    const highlight = highlightMap.get(i);
+    
+    if (highlight) {
+      // Add highlighted text
+      elements.push(
+        <span 
+          key={`highlight-${i}`} 
+          className="px-1 rounded"
+          style={{ backgroundColor: highlight.color }}
+        >
+          {text.substring(i, i + highlight.length)}
+        </span>
+      );
+      i += highlight.length;
+    } else {
+      // Find the next highlight or end of text
+      let nextHighlight = text.length;
+      for (const [pos] of highlightMap) {
+        if (pos > i && pos < nextHighlight) {
+          nextHighlight = pos;
+        }
+      }
+      
+      // Add non-highlighted text
+      const textSegment = text.substring(i, nextHighlight);
+      if (textSegment) {
+        elements.push(
+          <span key={`text-${i}`} className="text-gray-800">
+            {textSegment}
+          </span>
+        );
+      }
+      i = nextHighlight;
+    }
   }
   
   return elements.length > 0 ? elements : <span className="text-gray-800">{text}</span>;
@@ -79,12 +108,78 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
   const getHighlights = () => {
     if (!coreMessaging) return [];
     
-    return [
-      { text: coreMessaging.primaryAnchor.content, color: colors.primaryAnchor },
-      { text: coreMessaging.secondaryAnchor.content, color: colors.secondaryAnchor },
-      { text: coreMessaging.problem, color: colors.problem },
-      { text: coreMessaging.differentiator, color: colors.differentiator },
-    ].filter(highlight => highlight.text && highlight.text.trim());
+    const highlights = [];
+
+    // Primary anchor - exact text
+    if (coreMessaging.primaryAnchor.content) {
+      highlights.push({ text: coreMessaging.primaryAnchor.content, color: colors.primaryAnchor });
+    }
+
+    // Secondary anchor - exact text
+    if (coreMessaging.secondaryAnchor.content) {
+      highlights.push({ text: coreMessaging.secondaryAnchor.content, color: colors.secondaryAnchor });
+    }
+
+    // ICP segments - exact text
+    if (coreMessaging.icp) {
+      coreMessaging.icp.forEach(icpSegment => {
+        if (icpSegment && icpSegment.trim()) {
+          highlights.push({ text: icpSegment.trim(), color: colors.secondaryAnchor });
+        }
+      });
+    }
+
+    // Problem - break into key phrases from user input
+    if (coreMessaging.problem) {
+      const problemPhrases = extractKeyPhrases(coreMessaging.problem);
+      problemPhrases.forEach(phrase => {
+        highlights.push({ text: phrase, color: colors.problem });
+      });
+    }
+
+    // Differentiator - break into key phrases from user input
+    if (coreMessaging.differentiator) {
+      const diffPhrases = extractKeyPhrases(coreMessaging.differentiator);
+      diffPhrases.forEach(phrase => {
+        highlights.push({ text: phrase, color: colors.differentiator });
+      });
+    }
+
+    return highlights.filter(highlight => highlight.text && highlight.text.trim());
+  };
+
+  // Extract meaningful phrases from text (sentences, key phrases)
+  const extractKeyPhrases = (text: string): string[] => {
+    if (!text) return [];
+    
+    const phrases = [];
+    
+    // Split by sentences first (most important)
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 15);
+    sentences.forEach(sentence => {
+      phrases.push(sentence.trim());
+    });
+
+    // Split by commas for key phrases
+    const commaPhrases = text.split(',').filter(phrase => phrase.trim().length > 15);
+    commaPhrases.forEach(phrase => {
+      phrases.push(phrase.trim());
+    });
+
+    // Add some important 3-5 word phrases (but limit them)
+    const words = text.split(/\s+/);
+    for (let i = 0; i < Math.min(words.length - 2, 10); i++) { // Limit to first 10 positions
+      const threeWordPhrase = words.slice(i, i + 3).join(' ');
+      const fourWordPhrase = words.slice(i, i + 4).join(' ');
+      
+      if (threeWordPhrase.length > 15) phrases.push(threeWordPhrase);
+      if (fourWordPhrase.length > 20) phrases.push(fourWordPhrase);
+    }
+
+    // Add the full text last (lowest priority for matching)
+    phrases.push(text.trim());
+
+    return phrases.slice(0, 15); // Limit to 15 phrases max per field
   };
 
   return (
@@ -190,24 +285,38 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
                 </h2>
                 
                 <div className="text-sm space-y-2">
-                  <p>
-                    {coreMessaging ? 
-                      createHighlightedText(
-                        `We help ${coreMessaging.secondaryAnchor.content || 'businesses'} with ${coreMessaging.primaryAnchor.content || 'their needs'} by solving ${coreMessaging.problem || 'key challenges'}.`,
-                        getHighlights()
-                      ) :
-                      <span className="text-gray-600">We help businesses solve key challenges with innovative solutions.</span>
-                    }
-                  </p>
-                  <p>
-                    {coreMessaging ? 
-                      createHighlightedText(
-                        `Our approach: ${coreMessaging.differentiator || 'unique differentiation'} sets us apart in the market.`,
-                        getHighlights()
-                      ) :
-                      <span className="text-gray-600">Our unique approach sets us apart in the market.</span>
-                    }
-                  </p>
+                  {/* Show generated content with highlights, or fallback to template */}
+                  {generatedContent ? (
+                    <>
+                      <p className="text-sm text-gray-700">
+                        {createHighlightedText(
+                          generatedContent.subheadline,
+                          getHighlights()
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        {coreMessaging ? 
+                          createHighlightedText(
+                            `We help ${coreMessaging.secondaryAnchor.content || 'businesses'} with ${coreMessaging.primaryAnchor.content || 'their needs'} by solving ${coreMessaging.problem || 'key challenges'}.`,
+                            getHighlights()
+                          ) :
+                          <span className="text-gray-600">We help businesses solve key challenges with innovative solutions.</span>
+                        }
+                      </p>
+                      <p>
+                        {coreMessaging ? 
+                          createHighlightedText(
+                            `Our approach: ${coreMessaging.differentiator || 'unique differentiation'} sets us apart in the market.`,
+                            getHighlights()
+                          ) :
+                          <span className="text-gray-600">Our unique approach sets us apart in the market.</span>
+                        }
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               

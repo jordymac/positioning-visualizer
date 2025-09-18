@@ -31,6 +31,7 @@ export function SimpleCoreMessagingForm({ onSubmit, defaultValues, isGenerating 
     },
     problem: defaultValues?.problem || '',
     differentiator: defaultValues?.differentiator || '',
+    icp: defaultValues?.icp || [''],
     thesis: defaultValues?.thesis || [''],
     risks: defaultValues?.risks || [''],
   });
@@ -296,6 +297,7 @@ export function SimpleCoreMessagingForm({ onSubmit, defaultValues, isGenerating 
               secondaryAnchor: { type: '', content: '' },
               problem: '',
               differentiator: '',
+              icp: [''],
               thesis: [''],
               risks: [''],
             })}

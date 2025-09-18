@@ -15,6 +15,7 @@ export interface PositioningExample {
     features?: string;
     focus?: string;
   };
+  icp: string[]; // Ideal Customer Profile - multiple segments supported
   tags: string[];
   tone: string;
   industry: string;
@@ -36,6 +37,7 @@ export const positioningExamples: PositioningExample[] = [
       audience: "B2B leaders",
       speed: "48 hours"
     },
+    icp: ["B2B SaaS founders", "Product marketing managers", "Growth team leads"],
     tags: ["speed-focused", "b2b-saas", "research", "time-sensitive"],
     tone: "professional",
     industry: "market research",
@@ -55,6 +57,7 @@ export const positioningExamples: PositioningExample[] = [
       audience: "startups",
       proof: "300+ companies helped"
     },
+    icp: ["Early-stage startup founders", "B2B SaaS companies", "Pre-Series A startups"],
     tags: ["positioning", "startups", "homepage", "service-based"],
     tone: "casual",
     industry: "product marketing",
@@ -74,6 +77,7 @@ export const positioningExamples: PositioningExample[] = [
       outcome: "get customers",
       features: "verified emails, personalization at scale"
     },
+    icp: ["B2B sales teams", "Agency account managers", "SaaS business development reps"],
     tags: ["differentiation-focused", "sales", "email-marketing", "results-oriented"],
     tone: "confident",
     industry: "sales tech",
@@ -93,6 +97,7 @@ export const positioningExamples: PositioningExample[] = [
       audience: "battery manufacturers", 
       proof: "leading global companies"
     },
+    icp: ["Battery manufacturing engineers", "Quality assurance managers", "Electric vehicle manufacturers"],
     tags: ["speed-improvement", "manufacturing", "existing-data", "enterprise"],
     tone: "technical",
     industry: "manufacturing",
@@ -112,6 +117,7 @@ export const positioningExamples: PositioningExample[] = [
       audience: "bulk haulers",
       focus: "dispatching and back office"
     },
+    icp: ["Bulk hauling fleet managers", "Logistics dispatchers", "Transportation company owners"],
     tags: ["niche-specific", "logistics", "industry-focused", "workflow-improvement"],
     tone: "professional",
     industry: "logistics",
@@ -131,6 +137,7 @@ export const positioningExamples: PositioningExample[] = [
       audience: "non-technical users",
       outcome: "better outbound campaigns"
     },
+    icp: ["Marketing managers", "Sales operations specialists", "Small business owners"],
     tags: ["ease-of-use", "competitor-alternative", "accessibility", "sales-tools"],
     tone: "approachable",
     industry: "sales tech", 
@@ -150,6 +157,7 @@ export const positioningExamples: PositioningExample[] = [
       audience: "solo business owners",
       proof: "150,000+ users"
     },
+    icp: ["Solo entrepreneurs", "Online course creators", "Digital product sellers"],
     tags: ["all-in-one", "solo-entrepreneurs", "simplification", "social-proof"],
     tone: "encouraging",
     industry: "creator economy",
