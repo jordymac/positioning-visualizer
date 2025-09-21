@@ -8,6 +8,173 @@ interface PositioningCanvasProps {
   generatedContent?: GeneratedContent;
 }
 
+// Intelligent phrase detection (same logic as backend debug system)
+function identifyGeneratedPhrases(generatedText: string, coreMessaging: CoreMessaging): Array<{text: string, color: string, type: string}> {
+  const phrases: Array<{text: string, color: string, type: string}> = [];
+  
+  // More precise approach: split by headline vs subheadline
+  // Assume the text format is: "HEADLINE: ... SUBHEADLINE: ..." 
+  // OR just "Headline text Subheadline text" where headline contains anchors
+  
+  let subheadlineText = generatedText;
+  
+  // If we have both anchors, find where they end and start from there
+  if (coreMessaging.primaryAnchor.content && coreMessaging.secondaryAnchor.content) {
+    const primaryAnchor = coreMessaging.primaryAnchor.content;
+    const secondaryAnchor = coreMessaging.secondaryAnchor.content;
+    
+    // Find the last occurrence of the secondary anchor (headline should end after this)
+    const secondaryIndex = generatedText.toLowerCase().lastIndexOf(secondaryAnchor.toLowerCase());
+    if (secondaryIndex !== -1) {
+      // Start analyzing after the secondary anchor + some buffer
+      const headlineEnd = secondaryIndex + secondaryAnchor.length;
+      subheadlineText = generatedText.substring(headlineEnd).trim();
+    }
+  }
+  
+  // Split subheadline into logical sections (split on commas and conjunctions too)
+  const sentences = subheadlineText.split(/[.!?]+|,\s*but\s+|,\s*however\s+|,\s*and\s+our\s+/).filter(s => s.trim());
+  
+  // Key problem indicators (words that suggest this part is about the problem)
+  const problemIndicators = [
+    'lack', 'no', 'without', 'difficult', 'challenge', 'issue', 'problem', 'struggle', 
+    'fail', 'unable', 'can\'t', 'don\'t', 'until', 'before', 'complain', 'frustrated',
+    'slow', 'manual', 'inefficient', 'time-consuming', 'expensive', 'costly'
+  ];
+  
+  // Key solution indicators (words that suggest this part is about the solution)
+  const solutionIndicators = [
+    'predicts', 'provides', 'enables', 'allows', 'helps', 'gives', 'offers', 'delivers',
+    'our platform', 'our solution', 'we', 'automatically', 'proactive', 'advance',
+    'real-time', 'instant', 'fast', 'efficient', 'easy', 'simple', 'automated'
+  ];
+  
+  sentences.forEach(sentence => {
+    const lowerSentence = sentence.toLowerCase();
+    
+    // Count problem vs solution indicators
+    const problemScore = problemIndicators.reduce((score, indicator) => 
+      score + (lowerSentence.includes(indicator) ? 1 : 0), 0
+    );
+    
+    const solutionScore = solutionIndicators.reduce((score, indicator) => 
+      score + (lowerSentence.includes(indicator) ? 1 : 0), 0
+    );
+    
+    // Classify the sentence and break it into meaningful chunks
+    if (problemScore > solutionScore && problemScore > 0) {
+      // This sentence is about the problem
+      const chunks = breakIntoChunks(sentence.trim(), 4, 8);
+      chunks.forEach(chunk => {
+        phrases.push({
+          text: chunk,
+          color: '#fecaca', // red
+          type: 'Generated Problem Section'
+        });
+      });
+    } else if (solutionScore > 0) {
+      // This sentence is about the solution
+      const chunks = breakIntoChunks(sentence.trim(), 4, 8);
+      chunks.forEach(chunk => {
+        phrases.push({
+          text: chunk,
+          color: '#dcfce7', // green
+          type: 'Generated Solution Section'
+        });
+      });
+    }
+  });
+  
+  return phrases;
+}
+
+// Break text into meaningful chunks of specified word length
+function breakIntoChunks(text: string, minWords: number, maxWords: number): string[] {
+  const words = text.split(' ').filter(w => w.length > 0);
+  const chunks: string[] = [];
+  
+  // Create overlapping chunks
+  for (let i = 0; i <= words.length - minWords; i++) {
+    const chunkLength = Math.min(maxWords, words.length - i);
+    if (chunkLength >= minWords) {
+      const chunk = words.slice(i, i + chunkLength).join(' ');
+      chunks.push(chunk);
+    }
+  }
+  
+  // Also add the full sentence if it's not too long
+  if (words.length <= maxWords) {
+    chunks.push(text);
+  }
+  
+  return [...new Set(chunks)]; // Remove duplicates
+}
+
+// Merge overlapping phrases of the same color to create continuous highlights
+function mergeOverlappingPhrases(phrases: Array<{text: string, color: string, type: string}>, fullText: string): Array<{text: string, color: string, type: string}> {
+  if (phrases.length === 0) return [];
+  
+  // Group phrases by color
+  const phrasesGroupedByColor = phrases.reduce((groups, phrase) => {
+    if (!groups[phrase.color]) {
+      groups[phrase.color] = [];
+    }
+    groups[phrase.color].push(phrase);
+    return groups;
+  }, {} as Record<string, Array<{text: string, color: string, type: string}>>);
+  
+  const mergedPhrases: Array<{text: string, color: string, type: string}> = [];
+  
+  // Process each color group separately
+  Object.entries(phrasesGroupedByColor).forEach(([color, colorPhrases]) => {
+    // Find the positions of each phrase in the full text
+    const phrasePositions = colorPhrases.map(phrase => {
+      const index = fullText.toLowerCase().indexOf(phrase.text.toLowerCase());
+      return {
+        ...phrase,
+        start: index,
+        end: index + phrase.text.length
+      };
+    }).filter(p => p.start !== -1) // Only keep phrases that are actually found
+    .sort((a, b) => a.start - b.start); // Sort by position
+    
+    if (phrasePositions.length === 0) return;
+    
+    // Merge overlapping or adjacent phrases
+    const merged = [];
+    let currentMerged = phrasePositions[0];
+    
+    for (let i = 1; i < phrasePositions.length; i++) {
+      const current = phrasePositions[i];
+      
+      // If phrases overlap or are adjacent (allowing small gaps of 1-2 characters)
+      if (current.start <= currentMerged.end + 2) {
+        // Extend the current merged phrase
+        currentMerged.end = Math.max(currentMerged.end, current.end);
+      } else {
+        // No overlap, finalize current and start new one
+        merged.push(currentMerged);
+        currentMerged = current;
+      }
+    }
+    
+    // Don't forget the last phrase
+    merged.push(currentMerged);
+    
+    // Extract the merged text from the full text
+    merged.forEach(mergedPhrase => {
+      const mergedText = fullText.substring(mergedPhrase.start, mergedPhrase.end);
+      mergedPhrases.push({
+        text: mergedText,
+        color: color,
+        type: mergedPhrase.type
+      });
+    });
+  });
+  
+  return mergedPhrases;
+}
+
 // Helper function to create highlighted text
 function createHighlightedText(text: string, highlights: { text: string; color: string }[]) {
   if (!text) return text;
@@ -105,7 +272,7 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
     value: '#f3e8ff', // purple
   };
 
-  const getHighlights = () => {
+  const getHighlights = (generatedText?: string) => {
     if (!coreMessaging) return [];
     
     const highlights = [];
@@ -129,19 +296,16 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
       });
     }
 
-    // Problem - break into key phrases from user input
-    if (coreMessaging.problem) {
-      const problemPhrases = extractKeyPhrases(coreMessaging.problem);
-      problemPhrases.forEach(phrase => {
-        highlights.push({ text: phrase, color: colors.problem });
-      });
-    }
-
-    // Differentiator - break into key phrases from user input
-    if (coreMessaging.differentiator) {
-      const diffPhrases = extractKeyPhrases(coreMessaging.differentiator);
-      diffPhrases.forEach(phrase => {
-        highlights.push({ text: phrase, color: colors.differentiator });
+    // NEW: Use intelligent phrase detection for problem/solution sections
+    if (generatedText) {
+      const generatedPhrases = identifyGeneratedPhrases(generatedText, coreMessaging);
+      console.log('🔍 DEBUG: Generated phrases before merging:', generatedPhrases.map(p => `${p.color}: "${p.text}"`));
+      
+      const mergedPhrases = mergeOverlappingPhrases(generatedPhrases, generatedText);
+      console.log('🔗 DEBUG: Merged phrases:', mergedPhrases.map(p => `${p.color}: "${p.text}"`));
+      
+      mergedPhrases.forEach(phrase => {
+        highlights.push({ text: phrase.text, color: phrase.color });
       });
     }
 
@@ -279,7 +443,10 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
               <div className="space-y-3">
                 <h2 className="text-2xl font-bold leading-tight text-gray-800">
                   {coreMessaging && generatedContent?.headline ? 
-                    createHighlightedText(generatedContent.headline, getHighlights()) :
+                    createHighlightedText(
+                      generatedContent.headline, 
+                      getHighlights(`${generatedContent.headline} ${generatedContent.subheadline}`)
+                    ) :
                     generatedContent?.headline || 'Your Positioning Strategy'
                   }
                 </h2>
@@ -291,7 +458,7 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
                       <p className="text-sm text-gray-700">
                         {createHighlightedText(
                           generatedContent.subheadline,
-                          getHighlights()
+                          getHighlights(`${generatedContent.headline} ${generatedContent.subheadline}`)
                         )}
                       </p>
                     </>
@@ -301,7 +468,7 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
                         {coreMessaging ? 
                           createHighlightedText(
                             `We help ${coreMessaging.secondaryAnchor.content || 'businesses'} with ${coreMessaging.primaryAnchor.content || 'their needs'} by solving ${coreMessaging.problem || 'key challenges'}.`,
-                            getHighlights()
+                            getHighlights(`We help ${coreMessaging.secondaryAnchor.content || 'businesses'} with ${coreMessaging.primaryAnchor.content || 'their needs'} by solving ${coreMessaging.problem || 'key challenges'}.`)
                           ) :
                           <span className="text-gray-600">We help businesses solve key challenges with innovative solutions.</span>
                         }
@@ -310,7 +477,7 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
                         {coreMessaging ? 
                           createHighlightedText(
                             `Our approach: ${coreMessaging.differentiator || 'unique differentiation'} sets us apart in the market.`,
-                            getHighlights()
+                            getHighlights(`Our approach: ${coreMessaging.differentiator || 'unique differentiation'} sets us apart in the market.`)
                           ) :
                           <span className="text-gray-600">Our unique approach sets us apart in the market.</span>
                         }
