@@ -338,7 +338,7 @@ OPPORTUNITY: [market opportunity statement referencing specific segments]`;
   }
 
   // Identify which parts of generated text came from problem vs differentiator
-  private identifyGeneratedPhrases(generatedText: string, coreMessaging: CoreMessaging): Array<{text: string, color: string, type: string}> {
+  private identifyGeneratedPhrases(generatedText: string, _coreMessaging: CoreMessaging): Array<{text: string, color: string, type: string}> {
     const phrases: Array<{text: string, color: string, type: string}> = [];
     
     // Split generated text into logical sections (split on commas and conjunctions too)

@@ -12,6 +12,7 @@ export interface CoreMessaging {
   icp: string[]; // Ideal Customer Profile segments
   thesis: string[];
   risks: string[];
+  generationSettings?: GenerationSettings;
 }
 
 export interface PositioningVersion {
@@ -28,6 +29,11 @@ export interface GeneratedContent {
   thesis: string[];
   risks: string[];
   opportunity: string;
+}
+
+export interface GenerationSettings {
+  temperature: number; // 0.0 - 1.0
+  top_p: number; // 0.0 - 1.0
 }
 
 export interface TrainingExample {

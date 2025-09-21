@@ -20,7 +20,6 @@ function identifyGeneratedPhrases(generatedText: string, coreMessaging: CoreMess
   
   // If we have both anchors, find where they end and start from there
   if (coreMessaging.primaryAnchor.content && coreMessaging.secondaryAnchor.content) {
-    const primaryAnchor = coreMessaging.primaryAnchor.content;
     const secondaryAnchor = coreMessaging.secondaryAnchor.content;
     
     // Find the last occurrence of the secondary anchor (headline should end after this)
@@ -312,39 +311,6 @@ export function PositioningCanvas({ coreMessaging, generatedContent }: Positioni
     return highlights.filter(highlight => highlight.text && highlight.text.trim());
   };
 
-  // Extract meaningful phrases from text (sentences, key phrases)
-  const extractKeyPhrases = (text: string): string[] => {
-    if (!text) return [];
-    
-    const phrases = [];
-    
-    // Split by sentences first (most important)
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 15);
-    sentences.forEach(sentence => {
-      phrases.push(sentence.trim());
-    });
-
-    // Split by commas for key phrases
-    const commaPhrases = text.split(',').filter(phrase => phrase.trim().length > 15);
-    commaPhrases.forEach(phrase => {
-      phrases.push(phrase.trim());
-    });
-
-    // Add some important 3-5 word phrases (but limit them)
-    const words = text.split(/\s+/);
-    for (let i = 0; i < Math.min(words.length - 2, 10); i++) { // Limit to first 10 positions
-      const threeWordPhrase = words.slice(i, i + 3).join(' ');
-      const fourWordPhrase = words.slice(i, i + 4).join(' ');
-      
-      if (threeWordPhrase.length > 15) phrases.push(threeWordPhrase);
-      if (fourWordPhrase.length > 20) phrases.push(fourWordPhrase);
-    }
-
-    // Add the full text last (lowest priority for matching)
-    phrases.push(text.trim());
-
-    return phrases.slice(0, 15); // Limit to 15 phrases max per field
-  };
 
   return (
     <div className="relative bg-white border-2 border-gray-800 shadow-lg">

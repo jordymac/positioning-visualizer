@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,9 +21,10 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
+import { GenerationControls } from '@/components/forms/GenerationControls';
 import { CoreMessagingSchema, type CoreMessagingFormData } from '@/lib/validations';
-import type { CoreMessaging } from '@/types';
-import { Info, Plus, Trash2 } from 'lucide-react';
+import type { CoreMessaging, GenerationSettings } from '@/types';
+import { Info, Plus, Trash2, Settings } from 'lucide-react';
 
 interface CoreMessagingFormProps {
   onSubmit: (data: CoreMessaging) => void;
@@ -30,6 +32,12 @@ interface CoreMessagingFormProps {
 }
 
 export function CoreMessagingForm({ onSubmit, defaultValues }: CoreMessagingFormProps) {
+  const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
+    temperature: 0.3,
+    top_p: 0.8
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const form = useForm<CoreMessagingFormData>({
     resolver: zodResolver(CoreMessagingSchema),
     defaultValues: {
@@ -78,7 +86,10 @@ export function CoreMessagingForm({ onSubmit, defaultValues }: CoreMessagingForm
   });
 
   const handleSubmit = (data: CoreMessagingFormData) => {
-    onSubmit(data);
+    onSubmit({
+      ...data,
+      generationSettings
+    });
   };
 
   return (
@@ -413,6 +424,38 @@ export function CoreMessagingForm({ onSubmit, defaultValues }: CoreMessagingForm
             />
           ))}
         </div>
+        </div>
+
+        {/* Generation Settings Section */}
+        <div className="space-y-6">
+          <div className="border-b pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Generation Settings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Control how creative and varied the generated content will be
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                {showAdvanced ? 'Hide' : 'Show'} Controls
+              </Button>
+            </div>
+          </div>
+
+          {showAdvanced && (
+            <GenerationControls
+              onSettingsChange={setGenerationSettings}
+              initialSettings={generationSettings}
+              className="transition-all duration-200"
+            />
+          )}
         </div>
 
         <div className="flex gap-4">

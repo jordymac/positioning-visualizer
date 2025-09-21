@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { VersionManager } from '@/components/forms/VersionManager';
-import { PositioningCanvas } from '@/components/canvas/PositioningCanvas';
-import { SimpleCoreMessagingForm } from '@/components/forms/SimpleCoreMessagingForm';
-import { llmService } from '@/services/llmService';
 import { storageService } from '@/services/storageService';
 import type { CoreMessaging, GeneratedContent, PositioningVersion } from '@/types';
+
+// Lazy load heavy components
+const PositioningCanvas = lazy(() => import('@/components/canvas/PositioningCanvas').then(module => ({ default: module.PositioningCanvas })));
+const SimpleCoreMessagingForm = lazy(() => import('@/components/forms/SimpleCoreMessagingForm').then(module => ({ default: module.SimpleCoreMessagingForm })));
 
 function App() {
   const [versions, setVersions] = useState<PositioningVersion[]>([]);
@@ -57,10 +58,12 @@ function App() {
       storageService.autoSave([defaultVersion], defaultVersion.id);
     }
 
-    // Initialize LLM in background
+    // Initialize LLM in background with lazy loading
     const initializeLLM = async () => {
       setLlmStatus({ isInitialized: false, isInitializing: true });
       try {
+        // Dynamically import the LLM service
+        const { llmService } = await import('@/services/llmService');
         await llmService.initialize();
         setLlmStatus({ isInitialized: true, isInitializing: false });
       } catch (error) {
@@ -160,7 +163,8 @@ function App() {
     setIsGenerating(true);
 
     try {
-      // Generate content using LLM
+      // Dynamically import and generate content using LLM
+      const { llmService } = await import('@/services/llmService');
       const generatedContent = await llmService.generatePositioning(data);
 
       // Update the current version
@@ -228,10 +232,12 @@ function App() {
 
         <div className="space-y-8 p-8">
           {/* Canvas Section */}
-          <PositioningCanvas 
-            coreMessaging={currentVersion.coreMessaging}
-            generatedContent={currentVersion.generatedContent}
-          />
+          <Suspense fallback={<div className="h-96 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">Loading Canvas...</div>}>
+            <PositioningCanvas 
+              coreMessaging={currentVersion.coreMessaging}
+              generatedContent={currentVersion.generatedContent}
+            />
+          </Suspense>
           
           {/* Form Section */}
           <div className="rounded-lg border bg-card p-8 shadow-sm">
@@ -267,12 +273,14 @@ function App() {
                 )}
               </div>
             </div>
-            <SimpleCoreMessagingForm 
-              key={currentVersionId} // Force re-render when version changes
-              onSubmit={handleFormSubmit}
-              defaultValues={currentVersion.coreMessaging}
-              isGenerating={isGenerating}
-            />
+            <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">Loading Form...</div>}>
+              <SimpleCoreMessagingForm 
+                key={currentVersionId} // Force re-render when version changes
+                onSubmit={handleFormSubmit}
+                defaultValues={currentVersion.coreMessaging}
+                isGenerating={isGenerating}
+              />
+            </Suspense>
           </div>
         </div>
       </div>

@@ -19,9 +19,14 @@ const openai = new OpenAI({
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+  origin: [
+    'https://positioning-visualizer.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174', 
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174'
+  ]
 }));
 
 // Rate limiting
@@ -54,13 +59,21 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Positioning generation endpoint
+// Positioning generation endpoint with temperature/top-p support
 app.post('/api/generate-positioning', aiLimiter, async (req, res) => {
   try {
-    const { prompt, context } = req.body;
+    const { prompt, context, temperature = 0.3, top_p = 0.8, max_tokens = 800 } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    // Validate parameters
+    if (temperature < 0 || temperature > 1) {
+      return res.status(400).json({ error: 'Temperature must be between 0 and 1' });
+    }
+    if (top_p < 0 || top_p > 1) {
+      return res.status(400).json({ error: 'Top-p must be between 0 and 1' });
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -70,10 +83,10 @@ app.post('/api/generate-positioning', aiLimiter, async (req, res) => {
       });
     }
 
-    console.log('Generating positioning with ChatGPT...');
+    console.log(`Generating positioning with settings: temp=${temperature}, top_p=${top_p}`);
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -84,8 +97,9 @@ app.post('/api/generate-positioning', aiLimiter, async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 800,
-      temperature: 0.7
+      max_tokens: max_tokens,
+      temperature: temperature,
+      top_p: top_p
     });
 
     const generatedText = response.choices[0]?.message?.content || '';
@@ -93,6 +107,7 @@ app.post('/api/generate-positioning', aiLimiter, async (req, res) => {
     res.json({
       success: true,
       content: generatedText,
+      settings: { temperature, top_p, max_tokens },
       usage: {
         promptTokens: response.usage?.prompt_tokens,
         completionTokens: response.usage?.completion_tokens,
@@ -122,6 +137,70 @@ app.post('/api/generate-positioning', aiLimiter, async (req, res) => {
 
     res.status(500).json({ 
       error: 'Failed to generate positioning content.',
+      fallback: true
+    });
+  }
+});
+
+// Embedding generation endpoint for vector search
+app.post('/api/generate-embedding', aiLimiter, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({ 
+        error: 'OpenAI API key not configured on server',
+        fallback: true
+      });
+    }
+
+    console.log(`Generating embedding for text: ${text.substring(0, 100)}...`);
+
+    const response = await openai.embeddings.create({
+      model: 'text-embedding-ada-002',
+      input: text,
+    });
+
+    const embedding = response.data[0]?.embedding;
+
+    if (!embedding) {
+      throw new Error('No embedding returned from OpenAI');
+    }
+    
+    res.json({
+      success: true,
+      embedding: embedding,
+      usage: {
+        promptTokens: response.usage?.prompt_tokens,
+        totalTokens: response.usage?.total_tokens
+      }
+    });
+
+  } catch (error) {
+    console.error('OpenAI Embedding Error:', error);
+    
+    if (error instanceof Error) {
+      if ('status' in error && error.status === 429) {
+        return res.status(429).json({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          fallback: true
+        });
+      }
+      
+      if ('status' in error && error.status === 401) {
+        return res.status(401).json({ 
+          error: 'Invalid API key configuration.',
+          fallback: true
+        });
+      }
+    }
+
+    res.status(500).json({ 
+      error: 'Failed to generate embedding.',
       fallback: true
     });
   }
